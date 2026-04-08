@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convertisseur Ultra</title>
+
+<style>
+:root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --accent: #38bdf8;
+    --text: #e2e8f0;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    color: var(--text);
+}
+
+header {
+    text-align: center;
+    padding: 25px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    flex-wrap: wrap;
+    padding: 20px;
+}
+
+.panel {
+    background: var(--card);
+    width: 420px;
+    padding: 20px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    transition: 0.3s;
+}
+
+.panel:hover {
+    transform: translateY(-5px);
+}
+
+h3 {
+    margin-top: 0;
+}
+
+select, textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: none;
+    font-size: 16px;
+    background: #334155;
+    color: white;
+}
+
+textarea {
+    height: 140px;
+    resize: none;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: black;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    opacity: 0.9;
+}
+
+.swap {
+    text-align: center;
+    font-size: 22px;
+    cursor: pointer;
+    margin: 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<header>⚡ Convertisseur Ultra</header>
+
+<div class="wrapper">
+
+<div class="panel">
+    <h3>Entrée</h3>
+    
+    <select id="type"></select>
+    <select id="fromUnit"></select>
+
+    <textarea id="inputValue" placeholder="Tape une valeur..."></textarea>
+
+    <div class="swap" onclick="swapUnits()">🔁</div>
+</div>
+
+<div class="panel">
+    <h3>Résultat</h3>
+
+    <select id="toUnit"></select>
+    <textarea id="outputValue" readonly></textarea>
+
+    <button onclick="copyResult()">📋 Copier</button>
+</div>
+
+</div>
+
+<script>
+const units = {
+    temp: ["C","F","K"],
+    len: ["mm","cm","m","km","inch","ft","mile"],
+    vol: ["mL","L","m3","gal","pint"],
+    mass: ["g","kg","lb","oz"],
+    speed: ["kmh","mph","ms"],
+    time: ["s","min","h","day"]
+};
+
+const labels = {
+    temp: "Température",
+    len: "Longueur",
+    vol: "Volume",
+    mass: "Masse",
+    speed: "Vitesse",
+    time: "Temps"
+};
+
+const typeSelect = document.getElementById("type");
+Object.keys(units).forEach(k => {
+    typeSelect.innerHTML += `<option value="${k}">${labels[k]}</option>`;
+});
+
+function updateUnits() {
+    let type = typeSelect.value;
+    let from = document.getElementById("fromUnit");
+    let to = document.getElementById("toUnit");
+
+    from.innerHTML = "";
+    to.innerHTML = "";
+
+    units[type].forEach(u => {
+        from.innerHTML += `<option>${u}</option>`;
+        to.innerHTML += `<option>${u}</option>`;
+    });
+
+    convert();
+}
+
+function swapUnits() {
+    let from = document.getElementById("fromUnit");
+    let to = document.getElementById("toUnit");
+    [from.value, to.value] = [to.value, from.value];
+    convert();
+}
+
+function convert() {
+    let type = typeSelect.value;
+    let from = document.getElementById("fromUnit").value;
+    let to = document.getElementById("toUnit").value;
+    let val = parseFloat(document.getElementById("inputValue").value);
+
+    if (isNaN(val)) return document.getElementById("outputValue").value = "";
+
+    let result;
+
+    if (type === "temp") {
+        let C = from === "C" ? val : from === "F" ? (val-32)*5/9 : val-273.15;
+        result = {C, F: C*9/5+32, K: C+273.15}[to];
+    }
+
+    if (type === "len") {
+        let m = {mm:val/1000, cm:val/100, m:val, km:val*1000, inch:val*0.0254, ft:val*0.3048, mile:val*1609.34}[from];
+        result = {mm:m*1000, cm:m*100, m, km:m/1000, inch:m/0.0254, ft:m/0.3048, mile:m/1609.34}[to];
+    }
+
+    if (type === "vol") {
+        let L = {mL:val/1000, L:val, m3:val*1000, gal:val*3.78541, pint:val*0.473176}[from];
+        result = {mL:L*1000, L, m3:L/1000, gal:L/3.78541, pint:L/0.473176}[to];
+    }
+
+    if (type === "mass") {
+        let kg = {g:val/1000, kg:val, lb:val*0.453592, oz:val*0.0283495}[from];
+        result = {g:kg*1000, kg, lb:kg/0.453592, oz:kg/0.0283495}[to];
+    }
+
+    if (type === "speed") {
+        let ms = {kmh:val/3.6, mph:val*0.44704, ms:val}[from];
+        result = {kmh:ms*3.6, mph:ms/0.44704, ms}[to];
+    }
+
+    if (type === "time") {
+        let s = {s:val, min:val*60, h:val*3600, day:val*86400}[from];
+        result = {s:s, min:s/60, h:s/3600, day:s/86400}[to];
+    }
+
+    document.getElementById("outputValue").value = result.toFixed(4);
+}
+
+function copyResult() {
+    let out = document.getElementById("outputValue");
+    out.select();
+    document.execCommand("copy");
+}
+
+// events
+
+typeSelect.addEventListener("change", updateUnits);
+document.getElementById("fromUnit").addEventListener("change", convert);
+document.getElementById("toUnit").addEventListener("change", convert);
+document.getElementById("inputValue").addEventListener("input", convert);
+
+updateUnits();
+</script>
+
+</body>
+</html>
